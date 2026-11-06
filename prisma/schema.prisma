@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Piste musicale générée (résultat d'une tâche ACE-Step ou d'une démo)
+model Track {
+  id           String   @id @default(cuid())
+  taskId       String?  // ID de tâche ACE-Step (/release_task)
+  batchIndex   Int      @default(0) // index dans le lot (batch)
+  title        String   @default("Sans titre")
+  mode         String   @default("text2music") // text2music | cover | repaint | extract | lego | complete
+  status       Int      @default(0) // 0 = en cours, 1 = succès, 2 = échec
+  prompt       String   @default("")
+  lyrics       String   @default("")
+  bpm          Int?
+  keyScale     String?
+  timeSignature String?
+  duration     Float?
+  audioFormat  String   @default("mp3")
+  seed         String?
+  audioUrl     String?  // URL jouable (démo locale ou proxy /api/audio)
+  serverPath   String?  // chemin côté serveur ACE-Step (/v1/audio?path=...)
+  lrc          String?
+  score        Float?
+  error        String?
+  paramsJson   String   @default("{}") // paramètres complets de génération (restaurables)
+  metaJson     String   @default("{}")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([taskId])
+  @@index([createdAt])
+}
+
+// Session d'entraînement LoRA / LoKr
+model TrainingRun {
+  id          String   @id @default(cuid())
+  name        String   @default("Mon style")
+  kind        String   @default("lora") // lora | lokr
+  status      Int      @default(0) // 0 = en cours, 1 = terminé, 2 = échec, 3 = arrêté
+  progress    Int      @default(0) // pourcentage simulé en mode démo
+  paramsJson  String   @default("{}")
+  log         String   @default("")
+  datasetPath String   @default("")
+  outputDir   String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Dataset de chansons annotées pour l'entraînement
+model LoraDataset {
+  id              String   @id @default(cuid())
+  name            String
+  activationTag   String   @default("")
+  tagPosition     String   @default("prepend") // prepend | append | replace
+  allInstrumental Boolean  @default(false)
+  samplesJson     String   @default("[]")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Paramètres de connexion de l'application (singleton id="singleton")
+model AppSettings {
+  id       String   @id @default("singleton")
+  apiUrl   String   @default("http://127.0.0.1:8001")
+  apiKey   String   @default("")
+  language String   @default("fr")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
